@@ -1,0 +1,8 @@
+node_modules/
+
+# Ignore Terraform files and directories
+**/terraform.tfstate*
+**/.terraform/*
+**/.terraformrc
+**/*.tfvars
+**/*.tfstate
