@@ -176,7 +176,6 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: inventory
-          path: inventory
 
       - name: run ansible playbook
         run: ansible-playbook -i inventory configure.yml
