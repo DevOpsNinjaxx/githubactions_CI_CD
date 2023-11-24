@@ -154,7 +154,7 @@ jobs:
       - name: Persist Ansible inventory to artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: configurations
+          name: inventory
           path: inventory
 
   run-ansible:
@@ -175,11 +175,11 @@ jobs:
       - name: Attach workspace
         uses: actions/download-artifact@v3
         with:
-          name: configurations
+          name: inventory
           path: inventory
 
       - name: run ansible playbook
-        run: ansible-playbook -i inventory configure.yml        
+        run: ansible-playbook -i inventory configure.yml
 
         
       
