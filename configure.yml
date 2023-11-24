@@ -13,6 +13,13 @@
           - gnupg
         state: present
 
+    - name: Install nodejs and npm
+      apt:
+        pkg:
+          - nodejs
+          - npm
+        state: present
+          
     - name: Install dependencies
       shell: |
         cd /home/ubuntu/app
