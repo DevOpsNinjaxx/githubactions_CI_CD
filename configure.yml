@@ -1,0 +1,35 @@
+---
+- name: Configure Server
+  hosts: web
+  become: true
+  remote_user: ubuntu
+
+  tasks:
+    - name: Install necessary packages
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+        state: present
+
+    - name: Install Node js
+      become: yes
+      shell: |
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+        source ~/.bashrc
+        nvm install --lts
+
+
+    - name: Install app dependencies
+      become: true
+      ansible.builtin.command: "npm install"
+      args:
+        chdir: ~/app
+
+
+    - name: Start application
+      become: true
+      ansible.builtin.command: "npm start"
+      args:
+        chdir: ~/app

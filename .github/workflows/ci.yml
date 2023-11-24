@@ -157,5 +157,29 @@ jobs:
           name: configurations
           path: inventory
 
+  run-ansible:
+    runs-on: ubuntu-latest
+    needs: [setup_ansible, copy_code]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4 
+ 
+      - name: get ssh key
+        uses: webfactory/ssh-agent@v0.6.0
+        with:
+            ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      
+      - name: Install dependencies
+        run: sudo apt-get install ansible
+
+      - name: Attach workspace
+        uses: actions/download-artifact@v3
+        with:
+          name: configurations
+          path: inventory
+
+      - name: run ansible playbook
+        run: ansible-playbook -i inventory configure.yml        
+
         
       
