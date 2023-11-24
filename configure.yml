@@ -27,6 +27,7 @@
         npm install
 
     - name: "Install forever (to run Node.js app)."
+      become: yes
       npm: name=forever global=yes state=present
 
     - name: "Check list of Node.js apps running."
