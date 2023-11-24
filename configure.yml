@@ -13,24 +13,25 @@
           - gnupg
         state: present
 
-    - name: Install Node js
-      become: yes
-      ignore_errors: true
+    - name: Install dependencies
       shell: |
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-        source ~/.bashrc
-        nvm install --lts
+        cd /home/ubuntu/app
+        npm install
+
+    - name: "Install forever (to run Node.js app)."
+      npm: name=forever global=yes state=present
+
+    - name: "Check list of Node.js apps running."
+      command: forever list
+      register: forever_list
+      changed_when: false
 
 
-    - name: Install app dependencies
-      become: true
-      ansible.builtin.command: "npm install"
-      args:
-        chdir: ~/app
+    - name: "Start example Node.js app."
+      command: forever start /home/ubuntu/app/index.js
+      when: "forever_list.stdout.find('/home/ubuntu/app/index.js') == -1"  
 
-
-    - name: Start application
-      become: true
-      ansible.builtin.command: "npm start"
-      args:
-        chdir: ~/app
+    #- name: Start application
+    #  shell: |
+    #    cd ~/app
+    #    npm start

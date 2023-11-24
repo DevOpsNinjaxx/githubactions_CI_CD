@@ -31,6 +31,9 @@ resource "aws_instance" "development-instance" {
     sudo apt-get install nginx -y
     sudo systemctl start nginx
     sudo systemctl enable nginx
+    sudo curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+    sudo source ~/.bashrc
+    sudo nvm install --lts
   EOF
 
   tags = {
