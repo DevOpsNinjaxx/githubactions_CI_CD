@@ -1,11 +1,11 @@
 ---
 - name: Configure Server
   hosts: web
-  become: true
   remote_user: ubuntu
 
   tasks:
     - name: Install necessary packages
+      become: yes
       apt:
         name:
           - ca-certificates
@@ -29,9 +29,4 @@
 
     - name: "Start example Node.js app."
       command: forever start /home/ubuntu/app/index.js
-      when: "forever_list.stdout.find('/home/ubuntu/app/index.js') == -1"  
-
-    #- name: Start application
-    #  shell: |
-    #    cd ~/app
-    #    npm start
+      when: "forever_list.stdout.find('/home/ubuntu/app/index.js') == -1"
