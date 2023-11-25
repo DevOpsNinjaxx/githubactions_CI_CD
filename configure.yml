@@ -8,9 +8,7 @@
       become: yes
       apt:
         name:
-          - ca-certificates
           - curl
-          - gnupg
         state: present
 
     - name: Install nodejs and npm
