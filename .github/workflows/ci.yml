@@ -57,128 +57,143 @@ jobs:
       - name: Fix dependency vulnerabilities
         run: npm audit fix
 
-  deploy_infrastructure:
+  #deploy_infrastructure:
+  #  runs-on: ubuntu-latest
+  #  needs: audit_check
+#
+  #  defaults:
+  #    run:
+  #      working-directory: infrastructure/web
+#
+  #  steps:
+  #    - name: Checkout code
+  #      uses: actions/checkout@v4
+#
+  #    - name: Set up AWS CLI
+  #      uses: aws-actions/configure-aws-credentials@v1
+  #      with:
+  #        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #        aws-region: us-east-2
+#
+  #    - name: Set up Terraform
+  #      uses: hashicorp/setup-terraform@v1
+#
+  #    - name: Initialize Terraform
+  #      run: terraform init
+#
+  #    - name: Plan infrastructure changes
+  #      run: terraform plan -out=tfplan
+#
+  #    - name: Apply infrastructure changes
+  #      run: terraform apply tfplan
+#
+  #copy_code:
+  #  runs-on: ubuntu-latest
+  #  needs: deploy_infrastructure
+  #  steps:
+  #    - name: Checkout code
+  #      uses: actions/checkout@v4
+#
+  #    - name: Set up AWS CLI
+  #      uses: aws-actions/configure-aws-credentials@v1
+  #      with:
+  #        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #        aws-region: us-east-2  
+#
+  #    - name: Get EC2 Instance IP and save as HOST
+  #      run: |
+  #        # Fetch the public IP address of the EC2 instance based on its tag name
+  #        EC2_INSTANCE_IP=$(aws ec2 describe-instances \
+  #                            --filters "Name=tag:Name,Values=development-instance" \
+  #                            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+  #                            --output text)
+#
+  #        # Set the retrieved IP address as the HOST environment variable
+  #        echo "HOST=${EC2_INSTANCE_IP}" >> $GITHUB_ENV
+#
+  #    - name: Copy to EC2
+  #      uses: easingthemes/ssh-deploy@v2
+  #      with:
+  #        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  #        REMOTE_HOST: ${{ env.HOST }}
+  #        REMOTE_USER: ubuntu
+  #        source: ./
+  #        target: ~/app
+#
+  sonarqube:
+    name: SonarQube Trigger
     runs-on: ubuntu-latest
-    needs: audit_check
-
-    defaults:
-      run:
-        working-directory: infrastructure/web
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up AWS CLI
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
-
-      - name: Initialize Terraform
-        run: terraform init
-
-      - name: Plan infrastructure changes
-        run: terraform plan -out=tfplan
-
-      - name: Apply infrastructure changes
-        run: terraform apply tfplan
-
-  copy_code:
-    runs-on: ubuntu-latest
-    needs: deploy_infrastructure
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up AWS CLI
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2  
-
-      - name: Get EC2 Instance IP and save as HOST
-        run: |
-          # Fetch the public IP address of the EC2 instance based on its tag name
-          EC2_INSTANCE_IP=$(aws ec2 describe-instances \
-                              --filters "Name=tag:Name,Values=development-instance" \
-                              --query 'Reservations[*].Instances[*].PublicIpAddress' \
-                              --output text)
-
-          # Set the retrieved IP address as the HOST environment variable
-          echo "HOST=${EC2_INSTANCE_IP}" >> $GITHUB_ENV
-
-      - name: Copy to EC2
-        uses: easingthemes/ssh-deploy@v2
-        with:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          REMOTE_HOST: ${{ env.HOST }}
-          REMOTE_USER: ubuntu
-          source: ./
-          target: ~/app      
-
-  setup_ansible:
-    runs-on: ubuntu-latest
-    needs: deploy_infrastructure
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up AWS CLI
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
-
-      - name: Get EC2 Instance Public IP by Tag Name
-        run: |
-          # Fetch the public IP address of the EC2 instance based on its tag name
-          aws ec2 describe-instances \
-            --filters "Name=tag:Name,Values=development-instance" \
-            --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --output text >> inventory
-          cat inventory
-
-      - name: Cache Ansible inventory
-        uses: actions/cache@v2
-        with:
-          path: inventory
-          key: ansible-inventory-${{ hashFiles('inventory') }}
-
-      - name: Persist Ansible inventory to artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: inventory
-          path: inventory
-
-  run-ansible:
-    runs-on: ubuntu-latest
-    needs: [setup_ansible, copy_code]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4 
- 
-      - name: get ssh key
-        uses: webfactory/ssh-agent@v0.6.0
-        with:
-            ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      
-      - name: Install dependencies
-        run: sudo apt-get install ansible
-
-      - name: Attach workspace
-        uses: actions/download-artifact@v3
-        with:
-          name: inventory
-
-      - name: run ansible playbook
-        run: ansible-playbook -i inventory configure.yml
-
-        
+    - name: Checking out
+      uses: actions/checkout@master
+      with:
+        # Disabling shallow clone is recommended for improving relevancy of reporting
+        fetch-depth: 0
+    - name: SonarQube Scan
+      uses: kitabisa/sonarqube-action@v1.2.0
+      with:
+        host: ${{ secrets.SONARQUBE_HOST }}
+        login: ${{ secrets.SONARQUBE_TOKEN }}           
+#
+  #setup_ansible:
+  #  runs-on: ubuntu-latest
+  #  needs: deploy_infrastructure
+  #  steps:
+  #    - name: Checkout code
+  #      uses: actions/checkout@v4
+#
+  #    - name: Set up AWS CLI
+  #      uses: aws-actions/configure-aws-credentials@v1
+  #      with:
+  #        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #        aws-region: us-east-2
+#
+  #    - name: Get EC2 Instance Public IP by Tag Name
+  #      run: |
+  #        # Fetch the public IP address of the EC2 instance based on its tag name
+  #        aws ec2 describe-instances \
+  #          --filters "Name=tag:Name,Values=development-instance" \
+  #          --query 'Reservations[*].Instances[*].PublicIpAddress' \
+  #          --output text >> inventory
+  #        cat inventory
+#
+  #    - name: Cache Ansible inventory
+  #      uses: actions/cache@v2
+  #      with:
+  #        path: inventory
+  #        key: ansible-inventory-${{ hashFiles('inventory') }}
+#
+  #    - name: Persist Ansible inventory to artifacts
+  #      uses: actions/upload-artifact@v3
+  #      with:
+  #        name: inventory
+  #        path: inventory
+#
+  #run-ansible:
+  #  runs-on: ubuntu-latest
+  #  needs: [setup_ansible, copy_code]
+  #  steps:
+  #    - name: Checkout code
+  #      uses: actions/checkout@v4 
+ #
+  #    - name: get ssh key
+  #      uses: webfactory/ssh-agent@v0.6.0
+  #      with:
+  #          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+  #    
+  #    - name: Install dependencies
+  #      run: sudo apt-get install ansible
+#
+  #    - name: Attach workspace
+  #      uses: actions/download-artifact@v3
+  #      with:
+  #        name: inventory
+#
+  #    - name: run ansible playbook
+  #      run: ansible-playbook -i inventory configure.yml
+#
+  #      
       
